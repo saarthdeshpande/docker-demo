@@ -14,14 +14,35 @@ jobs:
  
       - name: Generate deployment package
         run: zip -r deploy.zip . -x '*.git*'
-      - name: Deploy to EB
-        uses: saarthdeshpande/docker-demo@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws_access_key: '${{ secrets.AWS_ACCESS_KEY }}'
-          aws_secret_key: '${{ secrets.AWS_SECRET_KEY }}'
-          application_name: docker-demo
-          environment_name: Dockerdemo-env
-          existing_bucket_name: elasticbeanstalk-ap-south-1-198137827861
-          region: "ap-south-1"
-          version_label: ${{ github.sha }}
-          deployment_package: deploy.zip
+          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: "ap-south-1"
+
+      - name: Upload package to S3 bucket
+        run: aws s3 cp deploy_package.zip s3://elasticbeanstalk-ap-south-1-198137827861/
+
+      - name: Create new ElasticBeanstalk Application Version
+        run: |
+          aws elasticbeanstalk create-application-version \
+          --application-name docker-demo \
+          --source-bundle S3Bucket="elasticbeanstalk-ap-south-1-198137827861",S3Key="deploy_package.zip" \
+          --version-label "ver-${{ github.sha }}" \
+          --description "commit-sha-${{ github.sha }}"
+
+      - name: Deploy new ElasticBeanstalk Application Version
+        run: aws elasticbeanstalk update-environment --environment-name Dockerdemo-env --version-label "ver-${{ github.sha }}"
+
+#      - name: Deploy to EB
+#        uses: saarthdeshpande/docker-demo@v2
+#        with:
+#          aws_access_key: '${{ secrets.AWS_ACCESS_KEY }}'
+#          aws_secret_key: '${{ secrets.AWS_SECRET_KEY }}'
+#          application_name: docker-demo
+#          environment_name: Dockerdemo-env
+#          existing_bucket_name: elasticbeanstalk-ap-south-1-198137827861
+#          region: "ap-south-1"
+#          version_label: ${{ github.sha }}
+#          deployment_package: deploy.zip
