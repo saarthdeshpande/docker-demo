@@ -22,6 +22,6 @@ jobs:
           application_name: docker-demo
           environment_name: Dockerdemo-env
           existing_bucket_name: elasticbeanstalk-ap-south-1-198137827861
-          region: ap-south-1
+          region: "ap-south-1"
           version_label: ${{ github.sha }}
           deployment_package: deploy.zip
